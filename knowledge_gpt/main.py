@@ -1,4 +1,6 @@
 import streamlit as st
+import pandas as pd
+import io
 
 from knowledge_gpt.components.sidebar import sidebar
 
@@ -127,6 +129,34 @@ if show_full_doc:
         st.markdown(f"<p>{wrap_doc_in_html(file.docs)}</p>", unsafe_allow_html=True)
 
 
+# if submit:
+#     if not is_query_valid(query):
+#         st.stop()
+
+#     # Output Columns
+#     answer_col, sources_col = st.columns(2)
+
+#     llm = get_llm(model=model, openai_api_key=openai_api_key, temperature=0)
+
+#     for file_name, folder_index in folder_indices:
+#         result = query_folder(
+#             folder_index=folder_index,
+#             query=query,
+#             return_all=return_all_chunks,
+#             llm=llm,
+#         )
+
+#         with answer_col:
+#             st.markdown(f"#### Answer for {file_name}")
+#             st.markdown(result.answer)
+
+#         with sources_col:
+#             st.markdown(f"#### Sources for {file_name}")
+#             for source in result.sources:
+#                 st.markdown(source.page_content)
+#                 st.markdown(source.metadata["source"])
+#                 st.markdown("---")
+
 if submit:
     if not is_query_valid(query):
         st.stop()
@@ -136,6 +166,9 @@ if submit:
 
     llm = get_llm(model=model, openai_api_key=openai_api_key, temperature=0)
 
+    # Initialize a list to store results for Excel
+    excel_data = []
+
     for file_name, folder_index in folder_indices:
         result = query_folder(
             folder_index=folder_index,
@@ -143,6 +176,13 @@ if submit:
             return_all=return_all_chunks,
             llm=llm,
         )
+
+        # Prepare data for the Excel file
+        row = [file_name, result.answer]
+        for source in result.sources:
+            row.extend([source.page_content, source.metadata.get("source", "")])
+
+        excel_data.append(row)
 
         with answer_col:
             st.markdown(f"#### Answer for {file_name}")
@@ -154,3 +194,19 @@ if submit:
                 st.markdown(source.page_content)
                 st.markdown(source.metadata["source"])
                 st.markdown("---")
+
+    # Create a DataFrame and convert it to Excel
+    df = pd.DataFrame(excel_data, columns=["Filename", "Answer", "Source 1", "Page Nr 1", "Source 2", "Page Nr 2", "etc"])
+    excel_file = io.BytesIO()
+    with pd.ExcelWriter(excel_file, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name="Results")
+        writer.save()
+    excel_file.seek(0)
+
+    # Provide a download button for the Excel file
+    st.download_button(
+        label="Download Results as Excel",
+        data=excel_file,
+        file_name="query_results.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
