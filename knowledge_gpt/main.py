@@ -210,7 +210,7 @@ if submit:
     excel_file = io.BytesIO()
     with pd.ExcelWriter(excel_file, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name="Results")
-        writer.save()
+        writer.close()
     excel_file.seek(0)
     
     st.download_button(
