@@ -118,10 +118,27 @@ if not is_open_ai_key_valid(openai_api_key, model):
 #         openai_api_key=openai_api_key,
 #     )
 
-with st.form(key="qa_form"):
-    query = st.text_area("Ask a question about the document")
-    submit = st.form_submit_button("Submit")
+# Initialize a session state for the number of questions
+if 'num_questions' not in st.session_state:
+    st.session_state['num_questions'] = 1
 
+# Function to add a question
+def add_question():
+    st.session_state['num_questions'] += 1
+
+# Function to remove a question
+def remove_question():
+    st.session_state['num_questions'] = max(1, st.session_state['num_questions'] - 1)
+
+# Add a button to add more questions
+with st.form(key="questions_form"):
+    for i in range(st.session_state['num_questions']):
+        st.text_area(f"Question {i+1}", key=f"question_{i}")
+    st.form_submit_button("Submit Questions")
+
+# Add buttons to add/remove question fields
+st.button("Add another question", on_click=add_question)
+st.button("Remove last question", on_click=remove_question)
 
 if show_full_doc:
     with st.expander("Document"):
@@ -157,65 +174,70 @@ if show_full_doc:
 #                 st.markdown(source.metadata["source"])
 #                 st.markdown("---")
 
-if submit:
-    if not is_query_valid(query):
-        st.stop()
-
-    # Output Columns
-    answer_col, sources_col = st.columns(2)
-
-    llm = get_llm(model=model, openai_api_key=openai_api_key, temperature=0)
-
+# Process the files when questions are submitted
+if st.form_submit_button("Submit"):
     # Initialize a list to store results for Excel
     excel_data = []
 
-    for file_name, folder_index in folder_indices:
-        result = query_folder(
-            folder_index=folder_index,
-            query=query,
-            return_all=return_all_chunks,
-            llm=llm,
-        )
+    # Iterate through all questions
+    for i in range(st.session_state['num_questions']):
+        query = st.session_state[f"question_{i}"]
+        if not is_query_valid(query):
+            continue
 
-        # Prepare data for the Excel file
-        row = [file_name, result.answer]
-        for source in result.sources:
-            row.extend([source.page_content, source.metadata.get("source", "")])
+        answer_col, sources_col = st.columns(2)
 
-        excel_data.append(row)
+        llm = get_llm(model=model, openai_api_key=openai_api_key, temperature=0)
 
-        with answer_col:
-            st.markdown(f"#### Answer for {file_name}")
-            st.markdown(result.answer)
+        for file_name, folder_index in folder_indices:
+            result = query_folder(
+                folder_index=folder_index,
+                query=query,
+                return_all=return_all_chunks,
+                llm=llm,
+            )
 
-        with sources_col:
-            st.markdown(f"#### Sources for {file_name}")
+            # Prepare data for the Excel file
+            row = [file_name, f"Question {i+1}", query, result.answer]
             for source in result.sources:
-                st.markdown(source.page_content)
-                st.markdown(source.metadata["source"])
-                st.markdown("---")
+                row.extend([source.page_content, source.metadata.get("source", "")])
 
-    # After getting results for each file
-    max_sources = max(len(row) for row in excel_data) // 2 - 1  # Calculate max number of sources
-    
+            excel_data.append(row)
+
+            # Display the answers and sources
+            with answer_col:
+                st.markdown(f"#### Answer for {file_name} - Question {i+1}")
+                st.markdown(result.answer)
+
+            with sources_col:
+                st.markdown(f"#### Sources for {file_name} - Question {i+1}")
+                for source in result.sources:
+                    st.markdown(source.page_content)
+                    st.markdown(source.metadata["source"])
+                    st.markdown("---")
+
+    # Determine the maximum number of sources
+    max_sources = max((len(row) - 4) // 2 for row in excel_data)
+
     # Dynamically create column names
-    column_names = ["Filename", "Answer"]
+    column_names = ["Document Name", "Question ID", "Question Text", "Answer"]
     for i in range(1, max_sources + 1):
         column_names.extend([f"Source {i}", f"Page Nr {i}"])
-    
+
     # Create a DataFrame with dynamic columns
     df = pd.DataFrame(excel_data, columns=column_names)
-    
-    # The rest of the Excel file creation and download button code remains the same
+
+    # Excel file creation and download button
     excel_file = io.BytesIO()
     with pd.ExcelWriter(excel_file, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name="Results")
         writer.close()
     excel_file.seek(0)
-    
+
     st.download_button(
         label="Download Results as Excel",
         data=excel_file,
         file_name="query_results.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
