@@ -44,9 +44,17 @@ if not openai_api_key:
     )
 
 
-uploaded_file = st.file_uploader(
-    "Upload a pdf, docx, or txt file",
+# uploaded_file = st.file_uploader(
+#     "Upload a pdf, docx, or txt file",
+#     type=["pdf", "docx", "txt"],
+#     help="Scanned documents are not supported yet!",
+# )
+
+# Change the file uploader to accept multiple files
+uploaded_files = st.file_uploader(
+    "Upload pdf, docx, or txt files",
     type=["pdf", "docx", "txt"],
+    accept_multiple_files=True,
     help="Scanned documents are not supported yet!",
 )
 
@@ -56,32 +64,57 @@ with st.expander("Advanced Options"):
     return_all_chunks = st.checkbox("Show all chunks retrieved from vector search")
     show_full_doc = st.checkbox("Show parsed contents of the document")
 
-
-if not uploaded_file:
+if not uploaded_files:
     st.stop()
 
-try:
-    file = read_file(uploaded_file)
-except Exception as e:
-    display_file_read_error(e, file_name=uploaded_file.name)
+folder_indices = []
 
-chunked_file = chunk_file(file, chunk_size=300, chunk_overlap=0)
+for uploaded_file in uploaded_files:
+    try:
+        file = read_file(uploaded_file)
+    except Exception as e:
+        display_file_read_error(e, file_name=uploaded_file.name)
+        continue  # Skip the current file and continue with the next
 
-if not is_file_valid(file):
-    st.stop()
+    if not is_file_valid(file):
+        continue  # Skip the current file and continue with the next
+
+    chunked_file = chunk_file(file, chunk_size=300, chunk_overlap=0)
+
+    with st.spinner(f"Indexing {uploaded_file.name}... This may take a while⏳"):
+        folder_index = embed_files(
+            files=[chunked_file],
+            embedding=EMBEDDING if model != "debug" else "debug",
+            vector_store=VECTOR_STORE if model != "debug" else "debug",
+            openai_api_key=openai_api_key,
+        )
+        folder_indices.append((uploaded_file.name, folder_index))
+
+# if not uploaded_file:
+#     st.stop()
+
+# try:
+#     file = read_file(uploaded_file)
+# except Exception as e:
+#     display_file_read_error(e, file_name=uploaded_file.name)
+
+# chunked_file = chunk_file(file, chunk_size=300, chunk_overlap=0)
+
+# if not is_file_valid(file):
+#     st.stop()
 
 
 if not is_open_ai_key_valid(openai_api_key, model):
     st.stop()
 
 
-with st.spinner("Indexing document... This may take a while⏳"):
-    folder_index = embed_files(
-        files=[chunked_file],
-        embedding=EMBEDDING if model != "debug" else "debug",
-        vector_store=VECTOR_STORE if model != "debug" else "debug",
-        openai_api_key=openai_api_key,
-    )
+# with st.spinner("Indexing document... This may take a while⏳"):
+#     folder_index = embed_files(
+#         files=[chunked_file],
+#         embedding=EMBEDDING if model != "debug" else "debug",
+#         vector_store=VECTOR_STORE if model != "debug" else "debug",
+#         openai_api_key=openai_api_key,
+#     )
 
 with st.form(key="qa_form"):
     query = st.text_area("Ask a question about the document")
@@ -102,20 +135,22 @@ if submit:
     answer_col, sources_col = st.columns(2)
 
     llm = get_llm(model=model, openai_api_key=openai_api_key, temperature=0)
-    result = query_folder(
-        folder_index=folder_index,
-        query=query,
-        return_all=return_all_chunks,
-        llm=llm,
-    )
 
-    with answer_col:
-        st.markdown("#### Answer")
-        st.markdown(result.answer)
+    for file_name, folder_index in folder_indices:
+        result = query_folder(
+            folder_index=folder_index,
+            query=query,
+            return_all=return_all_chunks,
+            llm=llm,
+        )
 
-    with sources_col:
-        st.markdown("#### Sources")
-        for source in result.sources:
-            st.markdown(source.page_content)
-            st.markdown(source.metadata["source"])
-            st.markdown("---")
+        with answer_col:
+            st.markdown(f"#### Answer for {file_name}")
+            st.markdown(result.answer)
+
+        with sources_col:
+            st.markdown(f"#### Sources for {file_name}")
+            for source in result.sources:
+                st.markdown(source.page_content)
+                st.markdown(source.metadata["source"])
+                st.markdown("---")
