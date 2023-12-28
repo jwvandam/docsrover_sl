@@ -134,7 +134,7 @@ def remove_question():
 with st.form(key="questions_form"):
     for i in range(st.session_state['num_questions']):
         st.text_area(f"Question {i+1}", key=f"question_{i}")
-    st.form_submit_button("Submit Questions")
+    submitted = st.form_submit_button("Submit")
 
 # Add buttons to add/remove question fields
 st.button("Add another question", on_click=add_question)
@@ -175,7 +175,7 @@ if show_full_doc:
 #                 st.markdown("---")
 
 # Process the files when questions are submitted
-if st.form_submit_button("Submit"):
+if submitted:
     # Initialize a list to store results for Excel
     excel_data = []
 
