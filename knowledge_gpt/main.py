@@ -195,15 +195,24 @@ if submit:
                 st.markdown(source.metadata["source"])
                 st.markdown("---")
 
-    # Create a DataFrame and convert it to Excel
-    df = pd.DataFrame(excel_data, columns=["Filename", "Answer", "Source 1", "Page Nr 1", "Source 2", "Page Nr 2", "etc"])
+    # After getting results for each file
+    max_sources = max(len(row) for row in excel_data) // 2 - 1  # Calculate max number of sources
+    
+    # Dynamically create column names
+    column_names = ["Filename", "Answer"]
+    for i in range(1, max_sources + 1):
+        column_names.extend([f"Source {i}", f"Page Nr {i}"])
+    
+    # Create a DataFrame with dynamic columns
+    df = pd.DataFrame(excel_data, columns=column_names)
+    
+    # The rest of the Excel file creation and download button code remains the same
     excel_file = io.BytesIO()
     with pd.ExcelWriter(excel_file, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name="Results")
         writer.save()
     excel_file.seek(0)
-
-    # Provide a download button for the Excel file
+    
     st.download_button(
         label="Download Results as Excel",
         data=excel_file,
