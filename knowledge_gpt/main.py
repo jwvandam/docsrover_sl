@@ -118,7 +118,7 @@ loaded_articles = load_articles(uploaded_file)
 
 selected_articles = {}
 for article in loaded_articles:
-    st.subheader(f"Hoofdstuk: {article['chapter']}")
+    st.subheader(f"{article['chapter']}")
     if st.checkbox(f"{article['label']} (Inwerking: {article['inwerking']})"):
         # Dropdown om de inhoud van het artikel te tonen
         if st.button(f"Toon Inhoud van {article['label']}", key=article['label']):
