@@ -21,7 +21,7 @@ from knowledge_gpt.core.embedding import embed_files
 from knowledge_gpt.core.qa import query_folder
 from knowledge_gpt.core.qa import query_single_prompt
 from knowledge_gpt.core.utils import get_llm
-from langchain_openai import OpenAI
+from langchain.llms import OpenAI
 
 
 EMBEDDING = "openai"
