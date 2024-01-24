@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
+import xml.etree.ElementTree as ET
 
 from knowledge_gpt.components.sidebar import sidebar
 
@@ -45,6 +46,8 @@ if not openai_api_key:
         " https://platform.openai.com/account/api-keys."
     )
 
+if not is_open_ai_key_valid(openai_api_key, model):
+    st.stop()
 
 # uploaded_file = st.file_uploader(
 #     "Upload a pdf, docx, or txt file",
@@ -53,12 +56,27 @@ if not openai_api_key:
 # )
 
 # Change the file uploader to accept multiple files
-uploaded_files = st.file_uploader(
-    "Upload pdf, docx, or txt files",
-    type=["pdf", "docx", "txt"],
-    accept_multiple_files=True,
+uploaded_file = st.file_uploader(
+    "Upload law as xml",
+    type=["xml"],
+    accept_multiple_files=False,
     help="Scanned documents are not supported yet!",
 )
+
+def extract_articles_from_xml(file_path):
+    tree = ET.parse(file_path)
+    root = tree.getroot()
+
+    articles = []
+    for article in root.findall(".//artikel"):
+        article_data = {'label': article.get('label', 'N/A'),
+                        'inwerking': article.get('inwerking', 'N/A'),
+                        'status': article.get('status', 'N/A')}
+        articles.append(article_data)
+    return articles
+
+def load_articles(filepath):
+    return extract_articles_from_xml(filepath)
 
 model: str = st.selectbox("Model", options=MODEL_LIST)  # type: ignore
 
@@ -66,31 +84,46 @@ with st.expander("Advanced Options"):
     return_all_chunks = st.checkbox("Show all chunks retrieved from vector search")
     show_full_doc = st.checkbox("Show parsed contents of the document")
 
-if not uploaded_files:
+if not uploaded_file:
     st.stop()
 
-folder_indices = []
+loaded_articles = load_articles(uploaded_file)
 
-for uploaded_file in uploaded_files:
-    try:
-        file = read_file(uploaded_file)
-    except Exception as e:
-        display_file_read_error(e, file_name=uploaded_file.name)
-        continue  # Skip the current file and continue with the next
+selected_articles = {}
+for article in loaded_articles:
+    if st.checkbox(f"{article['label']} (Inwerking: {article['inwerking']}, Status: {article['status']})"):
+        selected_articles[article['label']] = st.text_area(f"Complianceverplichtingen voor {article['label']}")
 
-    if not is_file_valid(file):
-        continue  # Skip the current file and continue with the next
+# Resultaten tonen
+if st.button('Toon Geselecteerde Artikelen en Verplichtingen'):
+    st.write('Geselecteerde Artikelen en Complianceverplichtingen:')
+    for label, obligations in selected_articles.items():
+        st.write(f"{label}: {obligations}")
 
-    chunked_file = chunk_file(file, chunk_size=300, chunk_overlap=0)
+# folder_indices = []
 
-    with st.spinner(f"Indexing {uploaded_file.name}... This may take a while⏳"):
-        folder_index = embed_files(
-            files=[chunked_file],
-            embedding=EMBEDDING if model != "debug" else "debug",
-            vector_store=VECTOR_STORE if model != "debug" else "debug",
-            openai_api_key=openai_api_key,
-        )
-        folder_indices.append((uploaded_file.name, folder_index))
+
+
+# for uploaded_file in uploaded_files:
+#     try:
+#         file = read_file(uploaded_file)
+#     except Exception as e:
+#         display_file_read_error(e, file_name=uploaded_file.name)
+#         continue  # Skip the current file and continue with the next
+
+#     if not is_file_valid(file):
+#         continue  # Skip the current file and continue with the next
+
+#     chunked_file = chunk_file(file, chunk_size=300, chunk_overlap=0)
+
+#     with st.spinner(f"Indexing {uploaded_file.name}... This may take a while⏳"):
+#         folder_index = embed_files(
+#             files=[chunked_file],
+#             embedding=EMBEDDING if model != "debug" else "debug",
+#             vector_store=VECTOR_STORE if model != "debug" else "debug",
+#             openai_api_key=openai_api_key,
+#         )
+#         folder_indices.append((uploaded_file.name, folder_index))
 
 # if not uploaded_file:
 #     st.stop()
@@ -106,8 +139,7 @@ for uploaded_file in uploaded_files:
 #     st.stop()
 
 
-if not is_open_ai_key_valid(openai_api_key, model):
-    st.stop()
+
 
 
 # with st.spinner("Indexing document... This may take a while⏳"):
@@ -118,32 +150,32 @@ if not is_open_ai_key_valid(openai_api_key, model):
 #         openai_api_key=openai_api_key,
 #     )
 
-# Initialize a session state for the number of questions
-if 'num_questions' not in st.session_state:
-    st.session_state['num_questions'] = 1
+# # Initialize a session state for the number of questions
+# if 'num_questions' not in st.session_state:
+#     st.session_state['num_questions'] = 1
 
-# Function to add a question
-def add_question():
-    st.session_state['num_questions'] += 1
+# # Function to add a question
+# def add_question():
+#     st.session_state['num_questions'] += 1
 
-# Function to remove a question
-def remove_question():
-    st.session_state['num_questions'] = max(1, st.session_state['num_questions'] - 1)
+# # Function to remove a question
+# def remove_question():
+#     st.session_state['num_questions'] = max(1, st.session_state['num_questions'] - 1)
 
-# Add a button to add more questions
-with st.form(key="questions_form"):
-    for i in range(st.session_state['num_questions']):
-        st.text_area(f"Question {i+1}", key=f"question_{i}")
-    submitted = st.form_submit_button("Submit")
+# # Add a button to add more questions
+# with st.form(key="questions_form"):
+#     for i in range(st.session_state['num_questions']):
+#         st.text_area(f"Question {i+1}", key=f"question_{i}")
+#     submitted = st.form_submit_button("Submit")
 
-# Add buttons to add/remove question fields
-st.button("Add another question", on_click=add_question)
-st.button("Remove last question", on_click=remove_question)
+# # Add buttons to add/remove question fields
+# st.button("Add another question", on_click=add_question)
+# st.button("Remove last question", on_click=remove_question)
 
-if show_full_doc:
-    with st.expander("Document"):
-        # Hack to get around st.markdown rendering LaTeX
-        st.markdown(f"<p>{wrap_doc_in_html(file.docs)}</p>", unsafe_allow_html=True)
+# if show_full_doc:
+#     with st.expander("Document"):
+#         # Hack to get around st.markdown rendering LaTeX
+#         st.markdown(f"<p>{wrap_doc_in_html(file.docs)}</p>", unsafe_allow_html=True)
 
 
 # if submit:
@@ -174,70 +206,70 @@ if show_full_doc:
 #                 st.markdown(source.metadata["source"])
 #                 st.markdown("---")
 
-# Process the files when questions are submitted
-if submitted:
-    # Initialize a list to store results for Excel
-    excel_data = []
+# # Process the files when questions are submitted
+# if submitted:
+#     # Initialize a list to store results for Excel
+#     excel_data = []
 
-    # Iterate through all questions
-    for i in range(st.session_state['num_questions']):
-        query = st.session_state[f"question_{i}"]
-        if not is_query_valid(query):
-            continue
+#     # Iterate through all questions
+#     for i in range(st.session_state['num_questions']):
+#         query = st.session_state[f"question_{i}"]
+#         if not is_query_valid(query):
+#             continue
 
-        answer_col, sources_col = st.columns(2)
+#         answer_col, sources_col = st.columns(2)
 
-        llm = get_llm(model=model, openai_api_key=openai_api_key, temperature=0)
+#         llm = get_llm(model=model, openai_api_key=openai_api_key, temperature=0)
 
-        for file_name, folder_index in folder_indices:
-            result = query_folder(
-                folder_index=folder_index,
-                query=query,
-                return_all=return_all_chunks,
-                llm=llm,
-            )
+#         for file_name, folder_index in folder_indices:
+#             result = query_folder(
+#                 folder_index=folder_index,
+#                 query=query,
+#                 return_all=return_all_chunks,
+#                 llm=llm,
+#             )
 
-            # Prepare data for the Excel file
-            row = [file_name, f"Question {i+1}", query, result.answer]
-            for source in result.sources:
-                row.extend([source.page_content, source.metadata.get("source", "")])
+#             # Prepare data for the Excel file
+#             row = [file_name, f"Question {i+1}", query, result.answer]
+#             for source in result.sources:
+#                 row.extend([source.page_content, source.metadata.get("source", "")])
 
-            excel_data.append(row)
+#             excel_data.append(row)
 
-            # Display the answers and sources
-            with answer_col:
-                st.markdown(f"#### Answer for {file_name} - Question {i+1}")
-                st.markdown(result.answer)
+#             # Display the answers and sources
+#             with answer_col:
+#                 st.markdown(f"#### Answer for {file_name} - Question {i+1}")
+#                 st.markdown(result.answer)
 
-            with sources_col:
-                st.markdown(f"#### Sources for {file_name} - Question {i+1}")
-                for source in result.sources:
-                    st.markdown(source.page_content)
-                    st.markdown(source.metadata["source"])
-                    st.markdown("---")
+#             with sources_col:
+#                 st.markdown(f"#### Sources for {file_name} - Question {i+1}")
+#                 for source in result.sources:
+#                     st.markdown(source.page_content)
+#                     st.markdown(source.metadata["source"])
+#                     st.markdown("---")
 
-    # Determine the maximum number of sources
-    max_sources = max((len(row) - 4) // 2 for row in excel_data)
+#     # Determine the maximum number of sources
+#     max_sources = max((len(row) - 4) // 2 for row in excel_data)
 
-    # Dynamically create column names
-    column_names = ["Document Name", "Question ID", "Question Text", "Answer"]
-    for i in range(1, max_sources + 1):
-        column_names.extend([f"Source {i}", f"Page Nr {i}"])
+#     # Dynamically create column names
+#     column_names = ["Document Name", "Question ID", "Question Text", "Answer"]
+#     for i in range(1, max_sources + 1):
+#         column_names.extend([f"Source {i}", f"Page Nr {i}"])
 
-    # Create a DataFrame with dynamic columns
-    df = pd.DataFrame(excel_data, columns=column_names)
+#     # Create a DataFrame with dynamic columns
+#     df = pd.DataFrame(excel_data, columns=column_names)
 
-    # Excel file creation and download button
-    excel_file = io.BytesIO()
-    with pd.ExcelWriter(excel_file, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name="Results")
-        writer.close()
-    excel_file.seek(0)
+#     # Excel file creation and download button
+#     excel_file = io.BytesIO()
+#     with pd.ExcelWriter(excel_file, engine='xlsxwriter') as writer:
+#         df.to_excel(writer, index=False, sheet_name="Results")
+#         writer.close()
+#     excel_file.seek(0)
 
-    st.download_button(
-        label="Download Results as Excel",
-        data=excel_file,
-        file_name="query_results.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+#     st.download_button(
+#         label="Download Results as Excel",
+#         data=excel_file,
+#         file_name="query_results.xlsx",
+#         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+#     )
 
