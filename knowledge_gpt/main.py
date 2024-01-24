@@ -120,6 +120,9 @@ selected_articles = {}
 for article in loaded_articles:
     st.subheader(f"Hoofdstuk: {article['chapter']}")
     if st.checkbox(f"{article['label']} (Inwerking: {article['inwerking']})"):
+        # Dropdown om de inhoud van het artikel te tonen
+        if st.button(f"Toon Inhoud van {article['label']}", key=article['label']):
+            st.text_area("Inhoud", article['content'], key=f"content_{article['label']}")
         selected_articles[article['label']] = article
 
 folder_indices = []
