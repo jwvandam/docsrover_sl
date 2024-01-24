@@ -1,5 +1,5 @@
 <h1 align="center">
-📖KnowledgeGPT
+📖RegRover
 </h1>
 
 <div id="top" align="center">
