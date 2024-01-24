@@ -46,8 +46,7 @@ if not openai_api_key:
         " https://platform.openai.com/account/api-keys."
     )
 
-if not is_open_ai_key_valid(openai_api_key, model):
-    st.stop()
+
 
 # uploaded_file = st.file_uploader(
 #     "Upload a pdf, docx, or txt file",
@@ -85,6 +84,9 @@ with st.expander("Advanced Options"):
     show_full_doc = st.checkbox("Show parsed contents of the document")
 
 if not uploaded_file:
+    st.stop()
+
+if not is_open_ai_key_valid(openai_api_key, model):
     st.stop()
 
 loaded_articles = load_articles(uploaded_file)
