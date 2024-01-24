@@ -128,7 +128,7 @@ if st.button('Voer LLM Query uit voor Geselecteerde Artikelen'):
         prompt = f"Welke compliance verplichtingen vloeien voort uit dit artikel voor het gegeven bedrijfsprofiel? {article_data['label']} {bedrijfsprofiel}"
 
         # Voer LLM-query uit (query_folder is een aangenomen functie)
-        result = llm.invoke(prompt)
+        result = llm.predict(prompt)
 
         # Resultaten weergeven
         st.write(f"Resultaat voor {label}:")
