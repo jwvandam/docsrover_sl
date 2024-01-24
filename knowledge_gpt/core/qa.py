@@ -35,7 +35,7 @@ def query_single_prompt(
     chain = load_qa_chain(
         llm=llm,
         chain_type=chain_type,
-        query=prompt,
+        query=query,
         **model_kwargs
     )
 
