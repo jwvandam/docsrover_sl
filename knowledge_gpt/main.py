@@ -141,6 +141,7 @@ if st.button('Voer LLM Query uit voor Geselecteerde Artikelen'):
         result = completion.choices[0].message
 
         # Resultaten weergeven
+        st.write(prompt)
         st.write(f"Resultaat voor {label}:")
         st.write(result)  # Of een andere methode om de resultaten te tonen
 
