@@ -125,10 +125,8 @@ if st.button('Voer LLM Query uit voor Geselecteerde Artikelen'):
         prompt = f"Welke compliance verplichtingen vloeien voort uit dit artikel voor het gegeven bedrijfsprofiel? {article_data['label']} {bedrijfsprofiel}"
 
         # Voer LLM-query uit (query_folder is een aangenomen functie)
-        result = query_folder(
-            folder_index=folder_index,  # Moet aangepast worden op basis van hoe je de artikelen indiceert
+        result = query_single_prompt(
             query=prompt,
-            return_all=return_all_chunks,
             llm=llm,
         )
 
