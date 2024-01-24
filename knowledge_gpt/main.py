@@ -121,7 +121,7 @@ folder_indices = []
 # LLM Prompt genereren en queryen
 if st.button('Voer LLM Query uit voor Geselecteerde Artikelen'):
     # Initialiseer LLM
-    llm = OpenAI(model=model, temperature=0)
+    llm = OpenAI(openai_api_key=openai_api_key,model=model, temperature=0)
     
 
     for label, article_data in selected_articles.items():
