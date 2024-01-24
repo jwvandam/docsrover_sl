@@ -88,7 +88,7 @@ def extract_articles_from_xml(file_path):
     articles = []
     for article in root.findall(".//artikel"):
         if article.get('status') != 'vervallen':
-            chapter = article.get('bwb-ng-variabel-deel', 'Onbekend hoofdstuk').split('/')[2]
+            chapter = article.get('bwb-ng-variabel-deel', 'Onbekend hoofdstuk').split('/')[1]
             content = ''.join(article.itertext())  # Extracting the text content of the article
             article_data = {
                 'label': article.get('label', 'N/A'),
