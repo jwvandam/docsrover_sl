@@ -142,7 +142,7 @@ if st.button('Voer LLM Query uit voor Geselecteerde Artikelen'):
 
         # Resultaten weergeven
         st.write(f"Resultaat voor {label}:")
-        st.write(result.answer)  # Of een andere methode om de resultaten te tonen
+        st.write(result)  # Of een andere methode om de resultaten te tonen
 
 
 # for uploaded_file in uploaded_files:
