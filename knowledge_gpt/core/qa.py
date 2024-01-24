@@ -15,21 +15,25 @@ class AnswerWithSources(BaseModel):
 def query_single_prompt(
     query: str,
     llm: BaseChatModel,
-    chain_type: str = "general",
+    chain_type: str = "stuff",  # Default chain type
     **model_kwargs
 ) -> str:
     """
-    Queries the language model with a single prompt.
+    Queries the language model with a single query.
 
     Args:
-        query (str): The prompt to query.
+        query (str): The query to process.
         llm (BaseChatModel): The large language model to use for the query.
-        chain_type (str, optional): The type of chain to use for querying. Defaults to 'general'.
+        chain_type (str, optional): The type of chain to use for querying. Defaults to 'stuff'.
         **model_kwargs (Any): Additional keyword arguments to pass to the model.
 
     Returns:
         str: The response from the language model.
     """
+
+    # Ensure that the provided chain type is supported
+    if chain_type not in ['stuff', 'map_reduce', 'refine', 'map_rerank']:
+        raise ValueError(f"Unsupported chain type: {chain_type}. Must be one of ['stuff', 'map_reduce', 'refine', 'map_rerank']")
 
     # Load the appropriate question-answering chain based on the specified chain type
     chain = load_qa_chain(
@@ -39,7 +43,7 @@ def query_single_prompt(
         **model_kwargs
     )
 
-    # Execute the chain with the provided prompt
+    # Execute the chain with the provided query
     result = chain(query)
 
     # Retrieve and return the answer from the chain's output
