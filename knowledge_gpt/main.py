@@ -54,7 +54,7 @@ if not openai_api_key:
 #     help="Scanned documents are not supported yet!",
 # )
 
-# Change the file uploader to accept multiple files
+# Change the file uploader to accept xml file
 uploaded_file = st.file_uploader(
     "Upload law as xml",
     type=["xml"],
@@ -62,16 +62,33 @@ uploaded_file = st.file_uploader(
     help="Scanned documents are not supported yet!",
 )
 
+# Input voor bedrijfsprofiel
+bedrijfsprofiel = st.text_area("Voer Bedrijfsprofiel in", "Beschrijf hier uw bedrijfsprofiel...")
+
+# def extract_articles_from_xml(file_path):
+#     tree = ET.parse(file_path)
+#     root = tree.getroot()
+
+#     articles = []
+#     for article in root.findall(".//artikel"):
+#         article_data = {'label': article.get('label', 'N/A'),
+#                         'inwerking': article.get('inwerking', 'N/A'),
+#                         'status': article.get('status', 'N/A')}
+#         articles.append(article_data)
+#     return articles
+
 def extract_articles_from_xml(file_path):
     tree = ET.parse(file_path)
     root = tree.getroot()
 
     articles = []
     for article in root.findall(".//artikel"):
-        article_data = {'label': article.get('label', 'N/A'),
-                        'inwerking': article.get('inwerking', 'N/A'),
-                        'status': article.get('status', 'N/A')}
-        articles.append(article_data)
+        if article.get('status') != 'vervallen':
+            chapter = article.get('bwb-ng-variabel-deel', 'Onbekend hoofdstuk').split('/')[2]  # Extracting chapter
+            article_data = {'label': article.get('label', 'N/A'),
+                            'chapter': chapter,
+                            'inwerking': article.get('inwerking', 'N/A')}
+            articles.append(article_data)
     return articles
 
 def load_articles(filepath):
@@ -93,17 +110,31 @@ loaded_articles = load_articles(uploaded_file)
 
 selected_articles = {}
 for article in loaded_articles:
-    if st.checkbox(f"{article['label']} (Inwerking: {article['inwerking']}, Status: {article['status']})"):
-        selected_articles[article['label']] = st.text_area(f"Complianceverplichtingen voor {article['label']}")
+    st.subheader(f"Hoofdstuk: {article['chapter']}")
+    if st.checkbox(f"{article['label']} (Inwerking: {article['inwerking']})"):
+        selected_articles[article['label']] = article
 
-# Resultaten tonen
-if st.button('Toon Geselecteerde Artikelen en Verplichtingen'):
-    st.write('Geselecteerde Artikelen en Complianceverplichtingen:')
-    for label, obligations in selected_articles.items():
-        st.write(f"{label}: {obligations}")
+folder_indices = []
 
-# folder_indices = []
+# LLM Prompt genereren en queryen
+if st.button('Voer LLM Query uit voor Geselecteerde Artikelen'):
+    # Initialiseer LLM
+    llm = get_llm(model=model, openai_api_key=openai_api_key, temperature=0)
 
+    for label, article_data in selected_articles.items():
+        prompt = f"Welke compliance verplichtingen vloeien voort uit dit artikel voor het gegeven bedrijfsprofiel? {article_data['label']} {bedrijfsprofiel}"
+
+        # Voer LLM-query uit (query_folder is een aangenomen functie)
+        result = query_folder(
+            folder_index=folder_index,  # Moet aangepast worden op basis van hoe je de artikelen indiceert
+            query=prompt,
+            return_all=return_all_chunks,
+            llm=llm,
+        )
+
+        # Resultaten weergeven
+        st.write(f"Resultaat voor {label}:")
+        st.write(result.answer)  # Of een andere methode om de resultaten te tonen
 
 
 # for uploaded_file in uploaded_files:
