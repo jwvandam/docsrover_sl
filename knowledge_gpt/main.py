@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import io
 import xml.etree.ElementTree as ET
+import openai
+
 
 from knowledge_gpt.components.sidebar import sidebar
 
@@ -121,14 +123,22 @@ folder_indices = []
 # LLM Prompt genereren en queryen
 if st.button('Voer LLM Query uit voor Geselecteerde Artikelen'):
     # Initialiseer LLM
-    llm = OpenAI(openai_api_key=openai_api_key,model=model, temperature=0)
-    
+    # Setting the API key
+    openai.api_key = openai_api_key
 
     for label, article_data in selected_articles.items():
         prompt = f"Welke compliance verplichtingen vloeien voort uit dit artikel voor het gegeven bedrijfsprofiel? {article_data['label']} {bedrijfsprofiel}"
-
-        # Voer LLM-query uit (query_folder is een aangenomen functie)
-        result = llm.predict(prompt)
+        
+        completion = openai.ChatCompletion.create(
+          # Use GPT 3.5 as the LLM
+          model=model,
+          # Pre-define conversation messages for the possible roles
+          messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt}
+          ]
+        )
+        result = completion.choices[0].message
 
         # Resultaten weergeven
         st.write(f"Resultaat voor {label}:")
