@@ -88,10 +88,14 @@ def extract_articles_from_xml(file_path):
     articles = []
     for article in root.findall(".//artikel"):
         if article.get('status') != 'vervallen':
-            chapter = article.get('bwb-ng-variabel-deel', 'Onbekend hoofdstuk').split('/')[2]  # Extracting chapter
-            article_data = {'label': article.get('label', 'N/A'),
-                            'chapter': chapter,
-                            'inwerking': article.get('inwerking', 'N/A')}
+            chapter = article.get('bwb-ng-variabel-deel', 'Onbekend hoofdstuk').split('/')[2]
+            content = ''.join(article.itertext())  # Extracting the text content of the article
+            article_data = {
+                'label': article.get('label', 'N/A'),
+                'chapter': chapter,
+                'content': content,  # Adding the content to the article data
+                'inwerking': article.get('inwerking', 'N/A')
+            }
             articles.append(article_data)
     return articles
 
@@ -127,7 +131,7 @@ if st.button('Voer LLM Query uit voor Geselecteerde Artikelen'):
     openai.api_key = openai_api_key
 
     for label, article_data in selected_articles.items():
-        prompt = f"Welke compliance verplichtingen vloeien voort uit dit artikel voor het gegeven bedrijfsprofiel? {article_data['label']} {bedrijfsprofiel}"
+        prompt = f"Welke compliance verplichtingen vloeien voort uit dit artikel voor het gegeven bedrijfsprofiel? Artikel: {article_data['label']}, Artikelinhoud: {article_data['content']}, {bedrijfsprofiel}"
         
         completion = openai.ChatCompletion.create(
           # Use GPT 3.5 as the LLM
@@ -143,7 +147,7 @@ if st.button('Voer LLM Query uit voor Geselecteerde Artikelen'):
         # Resultaten weergeven
         st.write(prompt)
         st.write(f"Resultaat voor {label}:")
-        st.write(result)  # Of een andere methode om de resultaten te tonen
+        st.write(result['content'])  # Of een andere methode om de resultaten te tonen
 
 
 # for uploaded_file in uploaded_files:
