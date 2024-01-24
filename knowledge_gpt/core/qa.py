@@ -1,5 +1,6 @@
 from typing import List
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
+from langchain.chains.question_answering import load_qa_chain
 from knowledge_gpt.core.prompts import STUFF_PROMPT
 from langchain.docstore.document import Document
 from knowledge_gpt.core.embedding import FolderIndex
