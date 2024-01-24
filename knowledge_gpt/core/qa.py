@@ -11,6 +11,40 @@ class AnswerWithSources(BaseModel):
     answer: str
     sources: List[Document]
 
+def query_single_prompt(
+    query: str,
+    llm: BaseChatModel,
+    chain_type: str = "general",
+    **model_kwargs
+) -> str:
+    """
+    Queries the language model with a single prompt.
+
+    Args:
+        prompt (str): The prompt to query.
+        llm (BaseChatModel): The large language model to use for the query.
+        chain_type (str, optional): The type of chain to use for querying. Defaults to 'general'.
+        **model_kwargs (Any): Additional keyword arguments to pass to the model.
+
+    Returns:
+        str: The response from the language model.
+    """
+
+    # Load the appropriate question-answering chain based on the specified chain type
+    chain = load_qa_chain(
+        llm=llm,
+        chain_type=chain_type,
+        prompt=prompt,
+        **model_kwargs
+    )
+
+    # Execute the chain with the provided prompt
+    result = chain(prompt)
+
+    # Retrieve and return the answer from the chain's output
+    answer = result["output_text"]
+
+    return answer
 
 def query_folder(
     query: str,
