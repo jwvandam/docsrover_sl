@@ -22,7 +22,7 @@ def query_single_prompt(
     Queries the language model with a single prompt.
 
     Args:
-        prompt (str): The prompt to query.
+        query (str): The prompt to query.
         llm (BaseChatModel): The large language model to use for the query.
         chain_type (str, optional): The type of chain to use for querying. Defaults to 'general'.
         **model_kwargs (Any): Additional keyword arguments to pass to the model.
@@ -35,12 +35,12 @@ def query_single_prompt(
     chain = load_qa_chain(
         llm=llm,
         chain_type=chain_type,
-        prompt=prompt,
+        query=prompt,
         **model_kwargs
     )
 
     # Execute the chain with the provided prompt
-    result = chain(prompt)
+    result = chain(query)
 
     # Retrieve and return the answer from the chain's output
     answer = result["output_text"]
