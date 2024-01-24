@@ -21,6 +21,7 @@ from knowledge_gpt.core.embedding import embed_files
 from knowledge_gpt.core.qa import query_folder
 from knowledge_gpt.core.qa import query_single_prompt
 from knowledge_gpt.core.utils import get_llm
+from langchain_openai import OpenAI
 
 
 EMBEDDING = "openai"
@@ -120,16 +121,14 @@ folder_indices = []
 # LLM Prompt genereren en queryen
 if st.button('Voer LLM Query uit voor Geselecteerde Artikelen'):
     # Initialiseer LLM
-    llm = get_llm(model=model, openai_api_key=openai_api_key, temperature=0)
+    llm = OpenAI(model=model, temperature=0)
+    
 
     for label, article_data in selected_articles.items():
         prompt = f"Welke compliance verplichtingen vloeien voort uit dit artikel voor het gegeven bedrijfsprofiel? {article_data['label']} {bedrijfsprofiel}"
 
         # Voer LLM-query uit (query_folder is een aangenomen functie)
-        result = query_single_prompt(
-            query=prompt,
-            llm=llm,
-        )
+        result = llm.invoke(prompt)
 
         # Resultaten weergeven
         st.write(f"Resultaat voor {label}:")
