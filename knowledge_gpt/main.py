@@ -21,6 +21,10 @@ from knowledge_gpt.core.qa import query_folder
 from knowledge_gpt.core.utils import get_llm
 
 
+from reportlab.pdfgen import canvas
+import fitz  # PyMuPDF
+from openai import ChatCompletion
+
 EMBEDDING = "openai"
 VECTOR_STORE = "faiss"
 MODEL_LIST = ["gpt-3.5-turbo", "gpt-4"]
@@ -45,23 +49,57 @@ if not openai_api_key:
         " https://platform.openai.com/account/api-keys."
     )
 
-st.title('EU Directives Search')
+st.title('EU Directive Transposition Analysis')
 
-# Search input
-search_query = st.text_input('Enter search term for EU Directives:', '')
+directive_pdf = st.file_uploader("Upload the EU Directive (PDF format):", type=["pdf"])
+transposition_pdf = st.file_uploader("Upload the Member State Transposition (PDF format):", type=["pdf"])
 
-search_button = st.button('Search')
 
-if search_button and search_query:
-    # Example URL; replace with the actual API endpoint and parameters
-    api_url = f"https://eur-lex.europa.eu/search.html?text={search_query}&type=quick&scope=EUROVOC"
-    response = requests.get(api_url)
-    directives = response.json()  # Assuming JSON response
 
-    # Process and display the results
-    # This will depend on the structure of the response data
-    for directive in directives:
-        st.write(directive["title"])  # Example; adjust based on actual response structure
+def extract_text_from_pdf(pdf_file):
+    with fitz.open(stream=pdf_file.read(), filetype="pdf") as doc:
+        text = ""
+        for page in doc:
+            text += page.get_text()
+    return text
+
+if directive_pdf and transposition_pdf:
+    directive_text = extract_text_from_pdf(directive_pdf)
+    transposition_text = extract_text_from_pdf(transposition_pdf)
+
+
+
+def analyse_transposition(directive_text, transposition_text):
+    prompt = f"Analyse how the following EU directive is transposed into member state law: \n\n Directive: {directive_text}\n\nTransposition: {transposition_text}"
+
+    response = ChatCompletion.create(
+        model="gpt-4-turbo-preview",
+        messages=[{"role": "system", "content": "You are a legal expert analyzing EU directives."}, 
+                  {"role": "user", "content": prompt}]
+    )
+
+    return response.choices[0].message['content']
+
+if directive_text and transposition_text:
+    analysis = analyse_transposition(directive_text, transposition_text)
+    st.text(analysis)  # Or use st.write() for better formatting
+
+
+def generate_pdf_report(analysis):
+    c = canvas.Canvas("Analysis_Report.pdf")
+    c.drawString(100, 750, "EU Directive Transposition Analysis Report")
+    c.drawString(100, 735, "-------------------------------------------")
+    c.drawString(100, 720, analysis)  # This is a simplification; you might need to format the text properly.
+    c.save()
+
+if directive_text and transposition_pdf:
+    # Assuming 'analysis' contains the analysis text from GPT-4
+    pdf_bytes = generate_pdf_report(analysis)
+    st.download_button(label="Download Analysis Report",
+                       data=pdf_bytes,
+                       file_name="EU_Directive_Transposition_Analysis_Report.pdf",
+                       mime="application/pdf")
+
 
 # uploaded_file = st.file_uploader(
 #     "Upload a pdf, docx, or txt file",
