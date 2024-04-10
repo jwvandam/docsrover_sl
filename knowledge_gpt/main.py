@@ -80,25 +80,7 @@ def analyse_transposition(directive_text, transposition_text):
 
     return response.choices[0].message['content']
 
-if directive_text and transposition_text:
-    analysis = analyse_transposition(directive_text, transposition_text)
-    st.text(analysis)  # Or use st.write() for better formatting
 
-
-def generate_pdf_report(analysis):
-    c = canvas.Canvas("Analysis_Report.pdf")
-    c.drawString(100, 750, "EU Directive Transposition Analysis Report")
-    c.drawString(100, 735, "-------------------------------------------")
-    c.drawString(100, 720, analysis)  # This is a simplification; you might need to format the text properly.
-    c.save()
-
-if directive_text and transposition_pdf:
-    # Assuming 'analysis' contains the analysis text from GPT-4
-    pdf_bytes = generate_pdf_report(analysis)
-    st.download_button(label="Download Analysis Report",
-                       data=pdf_bytes,
-                       file_name="EU_Directive_Transposition_Analysis_Report.pdf",
-                       mime="application/pdf")
 
 
 # uploaded_file = st.file_uploader(
