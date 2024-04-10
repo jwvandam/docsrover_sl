@@ -45,7 +45,23 @@ if not openai_api_key:
         " https://platform.openai.com/account/api-keys."
     )
 
+st.title('EU Directives Search')
 
+# Search input
+search_query = st.text_input('Enter search term for EU Directives:', '')
+
+search_button = st.button('Search')
+
+if search_button and search_query:
+    # Example URL; replace with the actual API endpoint and parameters
+    api_url = f"https://eur-lex.europa.eu/search.html?text={search_query}&type=quick&scope=EUROVOC"
+    response = requests.get(api_url)
+    directives = response.json()  # Assuming JSON response
+
+    # Process and display the results
+    # This will depend on the structure of the response data
+    for directive in directives:
+        st.write(directive["title"])  # Example; adjust based on actual response structure
 
 # uploaded_file = st.file_uploader(
 #     "Upload a pdf, docx, or txt file",
