@@ -63,7 +63,7 @@ def extract_text_from_pdf(pdf_file):
 
 def analyse_transposition(directive_text, transposition_text):
     prompt = f"Analyse how the following EU directive is transposed into member state law: \n\n Directive: {directive_text}\n\nTransposition: {transposition_text}"
-
+    openai.api_key = openai_api_key
     response = ChatCompletion.create(
         model="gpt-4-turbo-preview",
         messages=[{"role": "system", "content": "You are a legal expert analyzing EU directives."}, 
