@@ -22,6 +22,7 @@ from knowledge_gpt.core.utils import get_llm
 
 import fitz  # PyMuPDF
 from openai import ChatCompletion
+import openai
 
 EMBEDDING = "openai"
 VECTOR_STORE = "faiss"
