@@ -20,8 +20,6 @@ from knowledge_gpt.core.embedding import embed_files
 from knowledge_gpt.core.qa import query_folder
 from knowledge_gpt.core.utils import get_llm
 
-
-from reportlab.pdfgen import canvas
 import fitz  # PyMuPDF
 from openai import ChatCompletion
 
