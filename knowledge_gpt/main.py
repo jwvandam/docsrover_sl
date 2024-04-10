@@ -61,12 +61,6 @@ def extract_text_from_pdf(pdf_file):
             text += page.get_text()
     return text
 
-if directive_pdf and transposition_pdf:
-    directive_text = extract_text_from_pdf(directive_pdf)
-    transposition_text = extract_text_from_pdf(transposition_pdf)
-
-
-
 def analyse_transposition(directive_text, transposition_text):
     prompt = f"Analyse how the following EU directive is transposed into member state law: \n\n Directive: {directive_text}\n\nTransposition: {transposition_text}"
 
@@ -78,10 +72,13 @@ def analyse_transposition(directive_text, transposition_text):
 
     return response.choices[0].message['content']
 
-if directive_text and transposition_text:
+if directive_pdf and transposition_pdf:
+    directive_text = extract_text_from_pdf(directive_pdf)
+    transposition_text = extract_text_from_pdf(transposition_pdf)
     analysis_result = analyse_transposition(directive_text, transposition_text)
     st.subheader('Analysis Result')
     st.write(analysis_result)
+
 
 
 # uploaded_file = st.file_uploader(
