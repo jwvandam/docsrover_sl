@@ -10,7 +10,7 @@ load_dotenv()
 def sidebar():
     with st.sidebar:
         st.markdown(
-            "## How to use\n"
+            "## How to use EU rover\n"
             "1. Enter your [OpenAI API key](https://platform.openai.com/account/api-keys) below🔑\n"  # noqa: E501
             "2. Upload a pdf, docx, or txt file📄\n"
             "3. Ask a question about the document💬\n"
@@ -29,7 +29,7 @@ def sidebar():
         st.markdown("---")
         st.markdown("# About")
         st.markdown(
-            "📖LegalDocsGPT reads legal "
-            "documents and get accurate answers with instant citations. "
+            "📖EU rover analyses EU directives "
+            "and their member state transpositions."
         )
        
