@@ -80,7 +80,10 @@ def analyse_transposition(directive_text, transposition_text):
 
     return response.choices[0].message['content']
 
-
+if directive_text and transposition_text:
+    analysis_result = analyse_transposition(directive_text, transposition_text)
+    st.subheader('Analysis Result')
+    st.write(analysis_result)
 
 
 # uploaded_file = st.file_uploader(
